@@ -1,0 +1,254 @@
+openapi: 3.0.3
+
+info:
+  title: Reservation Management API
+  version: 1.0.0
+  description: 小規模施術店舗向け予約管理システムAPI
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /login:
+    post:
+      summary: ログイン
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+
+  /reservations:
+    get:
+      summary: 予約一覧取得
+      tags:
+        - Reservation
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: 取得対象日
+        - name: staffId
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: スタッフID
+      responses:
+        '200':
+          description: 予約一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
+
+    post:
+      summary: 予約作成
+      tags:
+        - Reservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReservationRequest'
+      responses:
+        '201':
+          description: 予約作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateReservationResponse'
+
+  /customers:
+    get:
+      summary: 顧客検索
+      tags:
+        - Customer
+      parameters:
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 顧客名
+      responses:
+        '200':
+          description: 顧客検索成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerSearchResult'
+
+  /customers/{id}:
+    get:
+      summary: 顧客詳細取得
+      tags:
+        - Customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 顧客詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerDetail'
+
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: admin@example.com
+        password:
+          type: string
+          example: password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: jwt-token
+
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customerId:
+          type: integer
+          example: 1
+        customerName:
+          type: string
+          example: 田中太郎
+        staffId:
+          type: integer
+          example: 1
+        staffName:
+          type: string
+          example: 山田
+        menuId:
+          type: integer
+          example: 1
+        menuName:
+          type: string
+          example: 整体60分
+        startTime:
+          type: string
+          format: date-time
+          example: 2026-06-01T10:00:00
+        endTime:
+          type: string
+          format: date-time
+          example: 2026-06-01T10:00:00
+
+    CreateReservationRequest:
+      type: object
+      required:
+        - customerId
+        - staffId
+        - menuId
+        - startTime
+      properties:
+        customerId:
+          type: integer
+        staffId:
+          type: integer
+        menuId:
+          type: integer
+        startTime:
+          type: string
+          format: date-time
+
+    CreateReservationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+
+    CustomerSearchResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 田中太郎
+        phoneNumber:
+          type: string
+          example: 090-1234-5678
+        lastVisitDate:
+          type: string
+          format: date
+          example: 2026-05-10
+
+    CustomerDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 田中太郎
+        phoneNumber:
+          type: string
+          example: 090-1234-5678
+        memo:
+          type: string
+          example: デスクワークが多いため肩こりが強い
+        lastTreatment:
+          $ref: '#/components/schemas/TreatmentHistory'
+        visitHistories:
+          type: array
+          items:
+            $ref: '#/components/schemas/TreatmentHistory'
+
+    TreatmentHistory:
+      type: object
+      properties:
+        visitDate:
+          type: string
+          format: date
+          example: 2026-05-10
+        menuName:
+          type: string
+          example: 整体60分
+        staffName:
+          type: string
+          example: 山田
+        memo:
+          type: string
+          example: 強めのマッサージを所望された
+
