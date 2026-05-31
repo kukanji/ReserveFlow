@@ -1,0 +1,12 @@
+# Environment
+.env
+
+# Gradle
+.gradle/
+build/
+
+# IntelliJ
+.idea/
+
+# Mac
+.DS_Store
