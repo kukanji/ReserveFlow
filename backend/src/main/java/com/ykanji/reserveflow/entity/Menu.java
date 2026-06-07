@@ -1,3 +1,7 @@
+package com.ykanji.reserveflow.entity;
+
+import jakarta.persistence.*;
+
 @Entity
 @Table(name = "menus")
 public class Menu extends BaseEntity {

@@ -1,3 +1,8 @@
+package com.ykanji.reserveflow.entity;
+
+import jakarta.persistence.*;
+import java.util.List;
+
 @Entity
 @Table(name = "staffs")
 public class Staff extends BaseEntity {

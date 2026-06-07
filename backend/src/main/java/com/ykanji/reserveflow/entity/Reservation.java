@@ -1,3 +1,8 @@
+package com.ykanji.reserveflow.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "reservations")
 public class Reservation extends BaseEntity {
