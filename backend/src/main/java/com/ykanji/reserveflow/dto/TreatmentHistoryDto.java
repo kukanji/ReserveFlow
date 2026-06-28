@@ -12,6 +12,31 @@ public class TreatmentHistoryDto {
 
     private String memo;
 
-    // constructor
-    // getter
+    public TreatmentHistoryDto(
+            LocalDate visitDate,
+            String menuName,
+            String staffName,
+            String memo
+    ) {
+        this.visitDate = visitDate;
+        this.menuName = menuName;
+        this.staffName = staffName;
+        this.memo = memo;
+    }
+
+    public LocalDate getVisitDate() {
+        return visitDate;
+    }
+
+    public String getMenuName() {
+        return menuName;
+    }
+
+    public String getStaffName() {
+        return staffName;
+    }
+
+    public String getMemo() {
+        return memo;
+    }
 }
