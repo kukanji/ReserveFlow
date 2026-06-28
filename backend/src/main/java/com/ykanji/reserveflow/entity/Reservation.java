@@ -26,4 +26,66 @@ public class Reservation extends BaseEntity {
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
+
+    // JPA用
+    protected Reservation() {
+    }
+
+    public Reservation(
+            Customer customer,
+            Staff staff,
+            Menu menu,
+            LocalDateTime startTime,
+            LocalDateTime endTime
+    ) {
+        this.customer = customer;
+        this.staff = staff;
+        this.menu = menu;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public Staff getStaff() {
+        return staff;
+    }
+
+    public Menu getMenu() {
+        return menu;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public void setStaff(Staff staff) {
+        this.staff = staff;
+    }
+
+    public void setMenu(Menu menu) {
+        this.menu = menu;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
 }
