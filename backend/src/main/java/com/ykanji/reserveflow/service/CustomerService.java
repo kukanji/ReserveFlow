@@ -1,6 +1,7 @@
 package com.ykanji.reserveflow.service;
 
-import com.ykanji.reserveflow.dto.CustomerDetailDto;
+import com.ykanji.reserveflow.dto.*;
+import com.ykanji.reserveflow.entity.*;
 import com.ykanji.reserveflow.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +17,8 @@ public class CustomerService {
     }
 
     public Optional<CustomerDetailDto> findById(Long id) {
-        
-    return customerRepository.findById(id)
+
+        return customerRepository.findById(id)
                 .map(customer ->
                         new CustomerDetailDto(
                                 customer.getId(),
@@ -28,5 +29,16 @@ public class CustomerService {
                                 null
                         )
                 );
-        }
+    }
+
+    public void createCustomer(CustomerCreateRequest request) {
+
+        Customer customer = new Customer(
+                request.getName(),
+                request.getPhoneNumber(),
+                request.getMemo()
+        );
+
+        customerRepository.save(customer);
+    }
 }
