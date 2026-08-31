@@ -23,6 +23,8 @@ public class Reservation extends BaseEntity {
     @JoinColumn(name = "menu_id")
     private Menu menu;
 
+    private String memo;
+
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
@@ -35,12 +37,14 @@ public class Reservation extends BaseEntity {
             Customer customer,
             Staff staff,
             Menu menu,
+            String memo,
             LocalDateTime startTime,
             LocalDateTime endTime
     ) {
         this.customer = customer;
         this.staff = staff;
         this.menu = menu;
+        this.memo = memo;
         this.startTime = startTime;
         this.endTime = endTime;
     }
@@ -79,6 +83,10 @@ public class Reservation extends BaseEntity {
 
     public void setMenu(Menu menu) {
         this.menu = menu;
+    }
+
+    public void setMemo(String memo) {
+        this.memo = memo;
     }
 
     public void setStartTime(LocalDateTime startTime) {
