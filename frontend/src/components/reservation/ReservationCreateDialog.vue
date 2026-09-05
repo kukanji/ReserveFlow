@@ -99,7 +99,7 @@ export default defineComponent({
       this.newCustomerPhone = ''
     },
     async submit() {
-      if (!this.canSubmit) return
+      if (!this.canSubmit || this.isSubmitting) return
       this.isSubmitting = true
       this.errorMessage = ''
       try {
