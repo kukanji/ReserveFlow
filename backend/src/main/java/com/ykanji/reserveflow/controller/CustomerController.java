@@ -6,6 +6,8 @@ import com.ykanji.reserveflow.service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/customers")
 public class CustomerController {
@@ -21,10 +23,16 @@ public class CustomerController {
         return customerService.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping
+    public List<CustomerListDto> searchCustomers(@RequestParam String name) {
+        return customerService.searchByName(name);
+    }
+
     @PostMapping
-    public void createCustomer(
+    public ResponseEntity<Long> createCustomer(
             @RequestBody CustomerCreateRequest request
     ) {
-        customerService.createCustomer(request);
+        Long id = customerService.createCustomer(request);
+        return ResponseEntity.ok(id);
     }
 }

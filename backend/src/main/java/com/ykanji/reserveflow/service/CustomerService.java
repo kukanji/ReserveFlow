@@ -5,6 +5,7 @@ import com.ykanji.reserveflow.entity.*;
 import com.ykanji.reserveflow.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -31,7 +32,7 @@ public class CustomerService {
                 );
     }
 
-    public void createCustomer(CustomerCreateRequest request) {
+    public Long createCustomer(CustomerCreateRequest request) {
 
         Customer customer = new Customer(
                 request.getName(),
@@ -39,6 +40,18 @@ public class CustomerService {
                 request.getMemo()
         );
 
-        customerRepository.save(customer);
+        return customerRepository.save(customer).getId();
+    }
+
+    public List<CustomerListDto> searchByName(String name) {
+
+        return customerRepository.findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(customer -> new CustomerListDto(
+                        customer.getId(),
+                        customer.getName(),
+                        customer.getPhoneNumber()
+                ))
+                .toList();
     }
 }
