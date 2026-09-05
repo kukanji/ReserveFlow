@@ -17,3 +17,8 @@ export interface ReservationCreatePayload {
   startTime: string
   memo: string | null
 }
+
+export interface ReservationCreatePrefill {
+  staffId: number
+  time: string
+}

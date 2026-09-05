@@ -34,6 +34,7 @@ export default defineComponent({
       default: 0,
     },
   },
+  emits: ['open-create'],
   data() {
     return {
       reservations: [] as Reservation[],
@@ -114,6 +115,12 @@ export default defineComponent({
       const minute = Number(value.slice(14, 16))
       return ((hour - START_HOUR) * 60 + minute) / SLOT_MINUTES
     },
+    handleSlotClick(staffId: number, hour: number, minute: number) {
+      this.$emit('open-create', {
+        staffId,
+        time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+      })
+    },
   },
 })
 </script>
@@ -144,12 +151,14 @@ export default defineComponent({
           >
             {{ slot.minute === 0 ? formatHourLabel(slot.hour) : '' }}
           </div>
-          <div
+          <button
             v-for="(staff, colIndex) in staffList"
             :key="`${slot.row}-${staff.id}`"
+            type="button"
             class="slot-cell"
             :class="{ 'slot-cell--hour': slot.minute === 0 }"
             :style="{ gridRow: slot.row, gridColumn: colIndex + 2 }"
+            @click="handleSlotClick(staff.id, slot.hour, slot.minute)"
           />
         </template>
 
@@ -221,8 +230,17 @@ export default defineComponent({
 }
 
 .slot-cell {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
   border-left: 1px solid var(--color-border);
   border-top: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.slot-cell:hover {
+  background: var(--color-background-soft);
 }
 
 .slot-cell--hour {

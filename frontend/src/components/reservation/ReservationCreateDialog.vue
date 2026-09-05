@@ -7,6 +7,7 @@ import { createReservation } from '@/api/reservations'
 import type { Staff } from '@/types/staff'
 import type { Menu } from '@/types/menu'
 import type { Customer } from '@/types/customer'
+import type { ReservationCreatePrefill } from '@/types/reservation'
 
 function toDateInputValue(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -18,6 +19,10 @@ export default defineComponent({
     selectedDate: {
       type: Date as PropType<Date>,
       required: true,
+    },
+    prefill: {
+      type: Object as PropType<ReservationCreatePrefill | null>,
+      default: null,
     },
   },
   emits: ['close', 'created'],
@@ -35,10 +40,10 @@ export default defineComponent({
       newCustomerName: '',
       newCustomerPhone: '',
 
-      staffId: null as number | null,
+      staffId: this.prefill?.staffId ?? (null as number | null),
       menuId: null as number | null,
       reservationDate: toDateInputValue(this.selectedDate),
-      reservationTime: '10:00',
+      reservationTime: this.prefill?.time ?? '10:00',
       memo: '',
 
       isSubmitting: false,

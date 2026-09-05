@@ -3,6 +3,7 @@ import { defineComponent } from 'vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import ReservationToolbar from '@/components/layout/ReservationToolbar.vue'
 import ReservationCreateDialog from '@/components/reservation/ReservationCreateDialog.vue'
+import type { ReservationCreatePrefill } from '@/types/reservation'
 
 export default defineComponent({
   name: 'App',
@@ -16,6 +17,7 @@ export default defineComponent({
       selectedDate: new Date(),
       isCreateDialogOpen: false,
       reservationsVersion: 0,
+      createDialogPrefill: null as ReservationCreatePrefill | null,
     }
   },
   computed: {
@@ -34,9 +36,17 @@ export default defineComponent({
     setSelectedDate(date: Date) {
       this.selectedDate = date
     },
+    openCreateDialog(prefill: ReservationCreatePrefill | null = null) {
+      this.createDialogPrefill = prefill
+      this.isCreateDialogOpen = true
+    },
+    closeCreateDialog() {
+      this.isCreateDialogOpen = false
+      this.createDialogPrefill = null
+    },
     onReservationCreated() {
       this.reservationsVersion += 1
-      this.isCreateDialogOpen = false
+      this.closeCreateDialog()
     },
   },
 })
@@ -50,19 +60,25 @@ export default defineComponent({
       @prev-date="shiftDate(-1)"
       @next-date="shiftDate(1)"
       @select-date="setSelectedDate"
-      @open-create="isCreateDialogOpen = true"
+      @open-create="openCreateDialog()"
     />
     <div class="app-body">
       <AppSidebar />
       <RouterView v-slot="{ Component }">
-        <component :is="Component" :selected-date="selectedDate" :reservations-version="reservationsVersion" />
+        <component
+          :is="Component"
+          :selected-date="selectedDate"
+          :reservations-version="reservationsVersion"
+          @open-create="openCreateDialog"
+        />
       </RouterView>
     </div>
 
     <ReservationCreateDialog
       v-if="isCreateDialogOpen"
       :selected-date="selectedDate"
-      @close="isCreateDialogOpen = false"
+      :prefill="createDialogPrefill"
+      @close="closeCreateDialog"
       @created="onReservationCreated"
     />
   </div>
