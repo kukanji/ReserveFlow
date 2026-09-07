@@ -2,15 +2,27 @@
 import { defineComponent, type PropType } from 'vue'
 import { fetchStaffList } from '@/api/staff'
 import { fetchMenuList } from '@/api/menus'
-import { searchCustomers, createCustomer } from '@/api/customers'
+import { searchCustomers, createCustomer, fetchCustomerDetail } from '@/api/customers'
 import { createReservation } from '@/api/reservations'
 import type { Staff } from '@/types/staff'
 import type { Menu } from '@/types/menu'
-import type { Customer } from '@/types/customer'
+import type { Customer, TreatmentHistory } from '@/types/customer'
 import type { ReservationCreatePrefill } from '@/types/reservation'
+import { SCHEDULE_START_HOUR, SCHEDULE_END_HOUR, SCHEDULE_SLOT_MINUTES } from '@/constants/schedule'
 
 function toDateInputValue(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function buildTimeOptions(): string[] {
+  const options: string[] = []
+  const totalMinutes = (SCHEDULE_END_HOUR - SCHEDULE_START_HOUR) * 60
+  for (let minutes = 0; minutes < totalMinutes; minutes += SCHEDULE_SLOT_MINUTES) {
+    const hour = SCHEDULE_START_HOUR + Math.floor(minutes / 60)
+    const minute = minutes % 60
+    options.push(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)
+  }
+  return options
 }
 
 export default defineComponent({
@@ -36,6 +48,8 @@ export default defineComponent({
       hasSearched: false,
       isSearching: false,
       selectedCustomer: null as Customer | null,
+      visitHistories: [] as TreatmentHistory[],
+      isLoadingHistory: false,
       isCreatingNewCustomer: false,
       newCustomerName: '',
       newCustomerPhone: '',
@@ -51,6 +65,9 @@ export default defineComponent({
     }
   },
   computed: {
+    timeOptions(): string[] {
+      return buildTimeOptions()
+    },
     canSubmit(): boolean {
       const hasCustomer =
         this.selectedCustomer !== null ||
@@ -80,12 +97,20 @@ export default defineComponent({
         this.isSearching = false
       }
     },
-    selectCustomer(customer: Customer) {
+    async selectCustomer(customer: Customer) {
       this.selectedCustomer = customer
       this.customerSearchResults = []
+      this.isLoadingHistory = true
+      try {
+        const detail = await fetchCustomerDetail(customer.id)
+        this.visitHistories = detail.visitHistories
+      } finally {
+        this.isLoadingHistory = false
+      }
     },
     changeCustomer() {
       this.selectedCustomer = null
+      this.visitHistories = []
       this.customerSearchQuery = ''
       this.customerSearchResults = []
       this.hasSearched = false
@@ -145,12 +170,27 @@ export default defineComponent({
         <section class="field-group">
           <h3 class="field-group-title">顧客</h3>
 
-          <div v-if="selectedCustomer" class="selected-customer">
-            <div>
-              <p class="selected-customer-name">{{ selectedCustomer.name }}</p>
-              <p class="selected-customer-phone">{{ selectedCustomer.phoneNumber }}</p>
+          <div v-if="selectedCustomer">
+            <div class="selected-customer">
+              <div>
+                <p class="selected-customer-name">{{ selectedCustomer.name }}</p>
+                <p class="selected-customer-phone">{{ selectedCustomer.phoneNumber }}</p>
+              </div>
+              <button type="button" class="link-button" @click="changeCustomer">変更</button>
             </div>
-            <button type="button" class="link-button" @click="changeCustomer">変更</button>
+
+            <p v-if="isLoadingHistory" class="history-status">来店履歴を読み込み中...</p>
+            <p v-else-if="visitHistories.length === 0" class="history-status">来店履歴はありません。</p>
+            <ul v-else class="visit-history-list">
+              <li v-for="(visit, index) in visitHistories" :key="index" class="visit-history-item">
+                <div class="visit-history-main">
+                  <span class="visit-history-date">{{ visit.visitDate }}</span>
+                  <span class="visit-history-menu">{{ visit.menuName }}</span>
+                  <span class="visit-history-staff">担当: {{ visit.staffName }}</span>
+                </div>
+                <p v-if="visit.memo" class="visit-history-memo">{{ visit.memo }}</p>
+              </li>
+            </ul>
           </div>
 
           <div v-else-if="isCreatingNewCustomer" class="new-customer-form">
@@ -215,7 +255,9 @@ export default defineComponent({
             </label>
             <label class="field">
               <span class="field-label">開始時刻</span>
-              <input v-model="reservationTime" type="time" />
+              <select v-model="reservationTime">
+                <option v-for="time in timeOptions" :key="time" :value="time">{{ time }}</option>
+              </select>
             </label>
           </div>
           <label class="field">
@@ -249,11 +291,11 @@ export default defineComponent({
 }
 
 .dialog {
-  width: 480px;
+  width: 720px;
   max-height: 90vh;
   overflow-y: auto;
   background: var(--color-background);
-  border-radius: 12px;
+  border-radius: 18px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
 }
 
@@ -261,40 +303,40 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 24px 30px;
   border-bottom: 1px solid var(--color-border);
 }
 
 .dialog-header h2 {
-  font-size: 18px;
+  font-size: 27px;
   font-weight: 700;
 }
 
 .close-button {
-  width: 28px;
-  height: 28px;
+  width: 42px;
+  height: 42px;
   border: none;
   background: none;
-  font-size: 20px;
+  font-size: 30px;
   color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .dialog-body {
-  padding: 20px;
+  padding: 30px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 30px;
 }
 
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
 }
 
 .field-group-title {
-  font-size: 13px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--color-text-muted);
 }
@@ -302,17 +344,17 @@ export default defineComponent({
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .field-label {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--color-text-muted);
 }
 
 .field-row {
   display: flex;
-  gap: 12px;
+  gap: 18px;
 }
 
 .field-row .field {
@@ -322,18 +364,18 @@ export default defineComponent({
 input,
 select,
 textarea {
-  padding: 8px 10px;
+  padding: 12px 15px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 9px;
   background: var(--color-background);
   color: var(--color-text);
-  font-size: 14px;
+  font-size: 21px;
   font-family: inherit;
 }
 
 .search-row {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
 .search-row input {
@@ -341,10 +383,11 @@ textarea {
 }
 
 .search-row button {
-  padding: 8px 14px;
+  padding: 12px 21px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 9px;
   background: var(--color-background);
+  font-size: 21px;
   cursor: pointer;
 }
 
@@ -353,7 +396,7 @@ textarea {
   flex-direction: column;
   list-style: none;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 9px;
   overflow: hidden;
 }
 
@@ -361,12 +404,12 @@ textarea {
   display: flex;
   width: 100%;
   justify-content: space-between;
-  padding: 8px 10px;
+  padding: 12px 15px;
   border: none;
   background: none;
   cursor: pointer;
   text-align: left;
-  font-size: 14px;
+  font-size: 21px;
 }
 
 .search-result:hover {
@@ -378,7 +421,7 @@ textarea {
 }
 
 .no-results {
-  font-size: 13px;
+  font-size: 19.5px;
   color: var(--color-text-muted);
 }
 
@@ -387,7 +430,7 @@ textarea {
   border: none;
   background: none;
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: 19.5px;
   cursor: pointer;
   padding: 0;
 }
@@ -396,53 +439,99 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 15px 18px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 9px;
+  margin-bottom: 12px;
+}
+
+.history-status {
+  font-size: 18px;
+  color: var(--color-text-muted);
+}
+
+.visit-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.visit-history-item {
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-background-soft);
+}
+
+.visit-history-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 18px;
+}
+
+.visit-history-date {
+  font-weight: 700;
+}
+
+.visit-history-staff {
+  color: var(--color-text-muted);
+}
+
+.visit-history-memo {
+  margin-top: 4px;
+  font-size: 16px;
+  color: var(--color-text-muted);
 }
 
 .selected-customer-name {
+  font-size: 21px;
   font-weight: 700;
 }
 
 .selected-customer-phone {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--color-text-muted);
 }
 
 .new-customer-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
 }
 
 .error-message {
   color: #d0342c;
-  font-size: 13px;
+  font-size: 19.5px;
 }
 
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 20px;
+  gap: 12px;
+  padding: 24px 30px;
   border-top: 1px solid var(--color-border);
 }
 
 .cancel-button {
-  padding: 8px 16px;
+  padding: 12px 24px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 9px;
   background: var(--color-background);
+  font-size: 21px;
   cursor: pointer;
 }
 
 .submit-button {
-  padding: 8px 16px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 9px;
   background: var(--color-primary);
   color: white;
+  font-size: 21px;
   font-weight: 700;
   cursor: pointer;
 }

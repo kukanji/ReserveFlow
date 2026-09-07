@@ -65,6 +65,10 @@ public class Reservation extends BaseEntity {
         return menu;
     }
 
+    public String getMemo() {
+        return memo;
+    }
+
     public LocalDateTime getStartTime() {
         return startTime;
     }

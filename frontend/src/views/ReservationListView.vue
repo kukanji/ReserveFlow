@@ -5,10 +5,11 @@ import { fetchStaffList } from '@/api/staff'
 import type { Reservation } from '@/types/reservation'
 import type { Staff } from '@/types/staff'
 import ReservationCard from '@/components/reservation/ReservationCard.vue'
+import { SCHEDULE_START_HOUR, SCHEDULE_END_HOUR, SCHEDULE_SLOT_MINUTES } from '@/constants/schedule'
 
-const SLOT_MINUTES = 30
-const START_HOUR = 7
-const END_HOUR = 21
+const SLOT_MINUTES = SCHEDULE_SLOT_MINUTES
+const START_HOUR = SCHEDULE_START_HOUR
+const END_HOUR = SCHEDULE_END_HOUR
 const SLOT_COUNT = ((END_HOUR - START_HOUR) * 60) / SLOT_MINUTES
 const HEADER_ROW_COUNT = 1
 

@@ -5,6 +5,7 @@ import com.ykanji.reserveflow.entity.*;
 import com.ykanji.reserveflow.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,16 +21,28 @@ public class CustomerService {
     public Optional<CustomerDetailDto> findById(Long id) {
 
         return customerRepository.findById(id)
-                .map(customer ->
-                        new CustomerDetailDto(
-                                customer.getId(),
-                                customer.getName(),
-                                customer.getPhoneNumber(),
-                                customer.getMemo(),
-                                null,
-                                null
-                        )
-                );
+                .map(customer -> {
+                    List<TreatmentHistoryDto> visitHistories = customer.getReservations().stream()
+                            .sorted(Comparator.comparing(Reservation::getStartTime).reversed())
+                            .map(reservation -> new TreatmentHistoryDto(
+                                    reservation.getStartTime().toLocalDate(),
+                                    reservation.getMenu().getName(),
+                                    reservation.getStaff().getName(),
+                                    reservation.getMemo()
+                            ))
+                            .toList();
+
+                    TreatmentHistoryDto lastTreatment = visitHistories.isEmpty() ? null : visitHistories.get(0);
+
+                    return new CustomerDetailDto(
+                            customer.getId(),
+                            customer.getName(),
+                            customer.getPhoneNumber(),
+                            customer.getMemo(),
+                            lastTreatment,
+                            visitHistories
+                    );
+                });
     }
 
     public Long createCustomer(CustomerCreateRequest request) {
