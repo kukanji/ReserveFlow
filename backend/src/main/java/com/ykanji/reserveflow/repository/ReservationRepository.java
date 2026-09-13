@@ -22,4 +22,19 @@ public interface ReservationRepository
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
+
+    @Query("""
+            select case when count(r) > 0 then true else false end
+            from Reservation r
+            where r.staff.id = :staffId
+              and r.id <> :excludeId
+              and r.startTime < :endTime
+              and r.endTime > :startTime
+            """)
+    boolean existsOverlappingExcluding(
+            @Param("staffId") Long staffId,
+            @Param("excludeId") Long excludeId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
+    );
 }

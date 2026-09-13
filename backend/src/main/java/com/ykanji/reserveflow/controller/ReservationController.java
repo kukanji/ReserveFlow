@@ -7,6 +7,8 @@ import com.ykanji.reserveflow.dto.ReservationCreateRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,5 +37,13 @@ public class ReservationController {
     ) {
         Long id = reservationService.createReservation(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
+    }
+
+    @PutMapping("/{id}")
+    public void updateReservation(
+            @PathVariable Long id,
+            @RequestBody ReservationCreateRequest request
+    ) {
+        reservationService.updateReservation(id, request);
     }
 }

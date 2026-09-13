@@ -35,7 +35,7 @@ export default defineComponent({
       default: 0,
     },
   },
-  emits: ['open-create'],
+  emits: ['open-create', 'open-edit'],
   data() {
     return {
       reservations: [] as Reservation[],
@@ -78,7 +78,7 @@ export default defineComponent({
         })
     },
     gridTemplateColumns(): string {
-      return `100px repeat(${this.staffList.length}, 1fr)`
+      return `100px repeat(${this.staffList.length}, 230px)`
     },
     gridTemplateRows(): string {
       return `auto repeat(${SLOT_COUNT}, 60px)`
@@ -170,6 +170,7 @@ export default defineComponent({
           :start-row="p.startRow"
           :row-span="p.rowSpan"
           :column="p.column"
+          @open-edit="$emit('open-edit', $event)"
         />
       </div>
     </div>

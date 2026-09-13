@@ -1,11 +1,13 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
 import DatePickerCalendar from '@/components/layout/DatePickerCalendar.vue'
+import CustomerSearchBox from '@/components/layout/CustomerSearchBox.vue'
 
 export default defineComponent({
   name: 'ReservationToolbar',
   components: {
     DatePickerCalendar,
+    CustomerSearchBox,
   },
   props: {
     dateLabel: {
@@ -17,7 +19,7 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: ['prev-date', 'next-date', 'select-date', 'open-create'],
+  emits: ['prev-date', 'next-date', 'select-date', 'open-create', 'open-edit'],
   data() {
     return {
       isCalendarOpen: false,
@@ -60,7 +62,7 @@ export default defineComponent({
       </div>
     </div>
     <div class="toolbar-actions">
-      <input class="search-input" type="search" placeholder="検索" />
+      <CustomerSearchBox @open-edit="$emit('open-edit', $event)" />
       <button type="button" class="create-button" @click="$emit('open-create')">+ 作成</button>
     </div>
   </header>
@@ -123,15 +125,6 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   gap: 12px;
-}
-
-.search-input {
-  padding: 6px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-background);
-  color: var(--color-text);
-  font-size: 25px;
 }
 
 .create-button {

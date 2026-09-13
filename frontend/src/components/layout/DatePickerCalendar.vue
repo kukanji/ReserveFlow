@@ -99,11 +99,11 @@ export default defineComponent({
 
 <style scoped>
 .calendar {
-  width: 560px;
-  padding: 24px;
+  width: 373px;
+  padding: 16px;
   background: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 11px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
 }
 
@@ -111,18 +111,18 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 11px;
 }
 
 .month-nav {
-  width: 56px;
-  height: 56px;
+  width: 37px;
+  height: 37px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--color-background);
   color: var(--color-text);
   cursor: pointer;
-  font-size: 32px;
+  font-size: 21px;
   line-height: 1;
 }
 
@@ -131,18 +131,18 @@ export default defineComponent({
 }
 
 .month-label {
-  font-size: 28px;
+  font-size: 19px;
   font-weight: 700;
 }
 
 .weekday-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .weekday-cell {
-  font-size: 24px;
+  font-size: 16px;
   color: var(--color-text-muted);
   text-align: center;
 }
@@ -150,16 +150,16 @@ export default defineComponent({
 .day-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 3px;
 }
 
 .day-cell {
   aspect-ratio: 1;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   background: none;
   color: var(--color-text);
-  font-size: 26px;
+  font-size: 17px;
   cursor: pointer;
 }
 

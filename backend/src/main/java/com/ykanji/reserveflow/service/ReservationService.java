@@ -54,7 +54,8 @@ public class ReservationService {
                         reservation.getMenu().getName(),
 
                         reservation.getStartTime(),
-                        reservation.getEndTime()
+                        reservation.getEndTime(),
+                        reservation.getMemo()
                 ))
                 .toList();
     }
@@ -95,5 +96,44 @@ public class ReservationService {
         );
 
         return reservationRepository.save(reservation).getId();
+    }
+
+    public void updateReservation(Long id, ReservationCreateRequest request) {
+
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+
+        if (request.getStartTime() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startTime is required");
+        }
+
+        Customer customer = customerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+        Staff staff = staffRepository.findById(request.getStaffId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Staff not found"));
+
+        Menu menu = menuRepository.findById(request.getMenuId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu not found"));
+
+        if (menu.getDurationMinutes() == null) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Menu has no duration set");
+        }
+
+        LocalDateTime startTime = request.getStartTime();
+        LocalDateTime endTime = startTime.plusMinutes(menu.getDurationMinutes());
+
+        if (reservationRepository.existsOverlappingExcluding(staff.getId(), id, startTime, endTime)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Staff is already booked for this time");
+        }
+
+        reservation.setCustomer(customer);
+        reservation.setStaff(staff);
+        reservation.setMenu(menu);
+        reservation.setMemo(request.getMemo());
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        reservationRepository.save(reservation);
     }
 }

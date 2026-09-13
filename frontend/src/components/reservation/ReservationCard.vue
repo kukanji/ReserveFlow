@@ -22,6 +22,7 @@ export default defineComponent({
       required: true,
     },
   },
+  emits: ['open-edit'],
   computed: {
     timeRange(): string {
       return `${this.formatTime(this.reservation.startTime)}〜${this.formatTime(this.reservation.endTime)}`
@@ -42,22 +43,32 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="reservation-card" :style="style">
+  <button type="button" class="reservation-card" :style="style" @click="$emit('open-edit', reservation)">
     <p class="customer-name">{{ reservation.customerName }}</p>
     <p class="menu-name">{{ reservation.menuName }}</p>
     <p class="time-range">{{ timeRange }}</p>
-  </div>
+  </button>
 </template>
 
 <style scoped>
 .reservation-card {
+  display: block;
+  width: 100%;
   margin: 1px 4px;
   padding: 4px 8px;
+  border: none;
   border-left: 3px solid var(--color-primary);
   border-radius: 4px;
   background: var(--color-primary-soft);
   overflow: hidden;
   line-height: 1.25;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.reservation-card:hover {
+  filter: brightness(0.96);
 }
 
 .customer-name {

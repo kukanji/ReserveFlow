@@ -8,6 +8,7 @@ export interface Reservation {
   menuName: string
   startTime: string
   endTime: string
+  memo: string | null
 }
 
 export interface ReservationCreatePayload {

@@ -3,11 +3,11 @@ import { defineComponent, type PropType } from 'vue'
 import { fetchStaffList } from '@/api/staff'
 import { fetchMenuList } from '@/api/menus'
 import { searchCustomers, createCustomer, fetchCustomerDetail } from '@/api/customers'
-import { createReservation } from '@/api/reservations'
+import { createReservation, updateReservation, fetchReservations } from '@/api/reservations'
 import type { Staff } from '@/types/staff'
 import type { Menu } from '@/types/menu'
 import type { Customer, TreatmentHistory } from '@/types/customer'
-import type { ReservationCreatePrefill } from '@/types/reservation'
+import type { Reservation, ReservationCreatePrefill } from '@/types/reservation'
 import { SCHEDULE_START_HOUR, SCHEDULE_END_HOUR, SCHEDULE_SLOT_MINUTES } from '@/constants/schedule'
 
 function toDateInputValue(date: Date): string {
@@ -36,12 +36,17 @@ export default defineComponent({
       type: Object as PropType<ReservationCreatePrefill | null>,
       default: null,
     },
+    editingReservation: {
+      type: Object as PropType<Reservation | null>,
+      default: null,
+    },
   },
-  emits: ['close', 'created'],
+  emits: ['close', 'saved'],
   data() {
     return {
       staffList: [] as Staff[],
       menuList: [] as Menu[],
+      existingReservations: [] as Reservation[],
 
       customerSearchQuery: '',
       customerSearchResults: [] as Customer[],
@@ -54,19 +59,49 @@ export default defineComponent({
       newCustomerName: '',
       newCustomerPhone: '',
 
-      staffId: this.prefill?.staffId ?? (null as number | null),
-      menuId: null as number | null,
-      reservationDate: toDateInputValue(this.selectedDate),
-      reservationTime: this.prefill?.time ?? '10:00',
-      memo: '',
+      staffId: this.editingReservation?.staffId ?? this.prefill?.staffId ?? (null as number | null),
+      menuId: this.editingReservation?.menuId ?? (null as number | null),
+      reservationDate: this.editingReservation
+        ? this.editingReservation.startTime.slice(0, 10)
+        : toDateInputValue(this.selectedDate),
+      reservationTime: this.editingReservation
+        ? this.editingReservation.startTime.slice(11, 16)
+        : (this.prefill?.time ?? '10:00'),
+      memo: this.editingReservation?.memo ?? '',
 
       isSubmitting: false,
       errorMessage: '',
     }
   },
   computed: {
+    isEditMode(): boolean {
+      return this.editingReservation !== null
+    },
+    dialogTitle(): string {
+      return this.isEditMode ? '予約編集' : '予約作成'
+    },
+    submitLabel(): string {
+      return this.isEditMode ? '更新' : '作成'
+    },
+    selectedMenuDurationMinutes(): number {
+      const menu = this.menuList.find((m) => m.id === this.menuId)
+      return menu?.durationMinutes ?? SCHEDULE_SLOT_MINUTES
+    },
+    busyIntervals(): { start: Date; end: Date }[] {
+      if (this.staffId === null || this.reservationDate === '') return []
+      return this.existingReservations
+        .filter((r) => r.staffId === this.staffId)
+        .filter((r) => r.startTime.slice(0, 10) === this.reservationDate)
+        .filter((r) => !(this.isEditMode && this.editingReservation && r.id === this.editingReservation.id))
+        .map((r) => ({ start: new Date(r.startTime), end: new Date(r.endTime) }))
+    },
     timeOptions(): string[] {
-      return buildTimeOptions()
+      const duration = this.selectedMenuDurationMinutes
+      return buildTimeOptions().filter((time) => {
+        const candidateStart = new Date(`${this.reservationDate}T${time}:00`)
+        const candidateEnd = new Date(candidateStart.getTime() + duration * 60000)
+        return !this.busyIntervals.some((b) => candidateStart < b.end && candidateEnd > b.start)
+      })
     },
     canSubmit(): boolean {
       const hasCustomer =
@@ -81,12 +116,40 @@ export default defineComponent({
       )
     },
   },
+  watch: {
+    timeOptions(newOptions: string[]) {
+      if (!newOptions.includes(this.reservationTime)) {
+        this.reservationTime = newOptions[0] ?? ''
+      }
+    },
+  },
   async mounted() {
-    const [staffData, menuData] = await Promise.all([fetchStaffList(), fetchMenuList()])
+    const [staffData, menuData, reservationData] = await Promise.all([
+      fetchStaffList(),
+      fetchMenuList(),
+      fetchReservations(),
+    ])
     this.staffList = staffData
     this.menuList = menuData
+    this.existingReservations = reservationData
+
+    if (this.editingReservation) {
+      this.isLoadingHistory = true
+      try {
+        const detail = await fetchCustomerDetail(this.editingReservation.customerId)
+        this.selectedCustomer = { id: detail.id, name: detail.name, phoneNumber: detail.phoneNumber }
+        this.visitHistories = detail.visitHistories
+      } finally {
+        this.isLoadingHistory = false
+      }
+    }
   },
   methods: {
+    onCustomerSearchKeydown(event: KeyboardEvent) {
+      // isComposing/keyCode 229: IME変換確定のEnterを検索実行と区別するため
+      if (event.isComposing || event.keyCode === 229) return
+      this.runCustomerSearch()
+    },
     async runCustomerSearch() {
       if (this.customerSearchQuery.trim() === '') return
       this.isSearching = true
@@ -139,17 +202,25 @@ export default defineComponent({
           })
         }
 
-        await createReservation({
+        const payload = {
           customerId,
           staffId: this.staffId as number,
           menuId: this.menuId as number,
           startTime: `${this.reservationDate}T${this.reservationTime}:00`,
           memo: this.memo.trim() === '' ? null : this.memo.trim(),
-        })
+        }
 
-        this.$emit('created')
+        if (this.isEditMode) {
+          await updateReservation((this.editingReservation as Reservation).id, payload)
+        } else {
+          await createReservation(payload)
+        }
+
+        this.$emit('saved')
       } catch {
-        this.errorMessage = '予約の作成に失敗しました。入力内容や時間の重複を確認してください。'
+        this.errorMessage = this.isEditMode
+          ? '予約の更新に失敗しました。入力内容や時間の重複を確認してください。'
+          : '予約の作成に失敗しました。入力内容や時間の重複を確認してください。'
       } finally {
         this.isSubmitting = false
       }
@@ -162,7 +233,7 @@ export default defineComponent({
   <div class="overlay" @click.self="$emit('close')">
     <div class="dialog">
       <div class="dialog-header">
-        <h2>予約作成</h2>
+        <h2>{{ dialogTitle }}</h2>
         <button type="button" class="close-button" @click="$emit('close')" aria-label="閉じる">×</button>
       </div>
 
@@ -211,7 +282,7 @@ export default defineComponent({
                 v-model="customerSearchQuery"
                 type="text"
                 placeholder="顧客名で検索"
-                @keyup.enter="runCustomerSearch"
+                @keydown.enter="onCustomerSearchKeydown"
               />
               <button type="button" @click="runCustomerSearch" :disabled="isSearching">検索</button>
             </div>
@@ -272,7 +343,7 @@ export default defineComponent({
       <div class="dialog-footer">
         <button type="button" class="cancel-button" @click="$emit('close')">キャンセル</button>
         <button type="button" class="submit-button" :disabled="!canSubmit || isSubmitting" @click="submit">
-          作成
+          {{ submitLabel }}
         </button>
       </div>
     </div>

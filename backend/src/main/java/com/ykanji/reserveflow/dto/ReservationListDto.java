@@ -22,6 +22,8 @@ public class ReservationListDto {
 
     private LocalDateTime endTime;
 
+    private String memo;
+
     public ReservationListDto(
             Long id,
             Long customerId,
@@ -31,7 +33,8 @@ public class ReservationListDto {
             Long menuId,
             String menuName,
             LocalDateTime startTime,
-            LocalDateTime endTime
+            LocalDateTime endTime,
+            String memo
     ) {
         this.id = id;
         this.customerId = customerId;
@@ -42,6 +45,7 @@ public class ReservationListDto {
         this.menuName = menuName;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.memo = memo;
     }
 
     public Long getId() {
@@ -78,5 +82,9 @@ public class ReservationListDto {
 
     public LocalDateTime getEndTime() {
         return endTime;
+    }
+
+    public String getMemo() {
+        return memo;
     }
 }
