@@ -2,8 +2,10 @@
 import { defineComponent, type PropType } from 'vue'
 import { fetchReservations } from '@/api/reservations'
 import { fetchStaffList } from '@/api/staff'
+import { fetchShifts } from '@/api/shifts'
 import type { Reservation } from '@/types/reservation'
 import type { Staff } from '@/types/staff'
+import type { Shift } from '@/types/shift'
 import ReservationCard from '@/components/reservation/ReservationCard.vue'
 import { SCHEDULE_START_HOUR, SCHEDULE_END_HOUR, SCHEDULE_SLOT_MINUTES } from '@/constants/schedule'
 
@@ -40,6 +42,7 @@ export default defineComponent({
     return {
       reservations: [] as Reservation[],
       staffList: [] as Staff[],
+      shifts: [] as Shift[],
       isLoading: true,
       errorMessage: '',
     }
@@ -47,6 +50,20 @@ export default defineComponent({
   computed: {
     selectedDateKey(): string {
       return this.toDateKey(this.selectedDate)
+    },
+    offStaffIds(): Set<number> {
+      return new Set(
+        this.shifts
+          .filter((s) => s.workDate === this.selectedDateKey && s.off)
+          .map((s) => s.staffId),
+      )
+    },
+    workingShiftByStaffId(): Map<number, Shift> {
+      return new Map(
+        this.shifts
+          .filter((s) => s.workDate === this.selectedDateKey && !s.off)
+          .map((s) => [s.staffId, s]),
+      )
     },
     timeSlots(): { row: number; hour: number; minute: number }[] {
       return Array.from({ length: SLOT_COUNT }, (_, i) => {
@@ -88,9 +105,12 @@ export default defineComponent({
     reservationsVersion() {
       this.loadReservations()
     },
+    selectedDateKey() {
+      this.loadShifts()
+    },
   },
   async mounted() {
-    await Promise.all([this.loadReservations(), this.loadStaffList()])
+    await Promise.all([this.loadReservations(), this.loadStaffList(), this.loadShifts()])
   },
   methods: {
     async loadReservations() {
@@ -105,6 +125,13 @@ export default defineComponent({
     async loadStaffList() {
       this.staffList = await fetchStaffList()
     },
+    async loadShifts() {
+      try {
+        this.shifts = await fetchShifts(this.selectedDateKey, this.selectedDateKey)
+      } catch {
+        this.shifts = []
+      }
+    },
     toDateKey(date: Date): string {
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
     },
@@ -116,7 +143,22 @@ export default defineComponent({
       const minute = Number(value.slice(14, 16))
       return ((hour - START_HOUR) * 60 + minute) / SLOT_MINUTES
     },
+    timeStringToMinutes(value: string): number {
+      const hour = Number(value.slice(0, 2))
+      const minute = Number(value.slice(3, 5))
+      return hour * 60 + minute
+    },
+    isSlotUnavailable(staffId: number, hour: number, minute: number): boolean {
+      if (this.offStaffIds.has(staffId)) return true
+      const shift = this.workingShiftByStaffId.get(staffId)
+      if (!shift || !shift.startTime || !shift.endTime) return false
+      const slotMinutes = hour * 60 + minute
+      const startMinutes = this.timeStringToMinutes(shift.startTime)
+      const endMinutes = this.timeStringToMinutes(shift.endTime)
+      return slotMinutes < startMinutes || slotMinutes >= endMinutes
+    },
     handleSlotClick(staffId: number, hour: number, minute: number) {
+      if (this.isSlotUnavailable(staffId, hour, minute)) return
       this.$emit('open-create', {
         staffId,
         time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
@@ -140,9 +182,11 @@ export default defineComponent({
           v-for="staff in staffList"
           :key="staff.id"
           class="staff-header"
+          :class="{ 'staff-header--off': offStaffIds.has(staff.id) }"
           :style="{ gridColumn: staffList.indexOf(staff) + 2 }"
         >
           {{ staff.name }}
+          <span v-if="offStaffIds.has(staff.id)" class="staff-header-off-badge">休み</span>
         </div>
 
         <template v-for="slot in timeSlots" :key="slot.row">
@@ -157,7 +201,7 @@ export default defineComponent({
             :key="`${slot.row}-${staff.id}`"
             type="button"
             class="slot-cell"
-            :class="{ 'slot-cell--hour': slot.minute === 0 }"
+            :class="{ 'slot-cell--hour': slot.minute === 0, 'slot-cell--off': isSlotUnavailable(staff.id, slot.hour, slot.minute) }"
             :style="{ gridRow: slot.row, gridColumn: colIndex + 2 }"
             @click="handleSlotClick(staff.id, slot.hour, slot.minute)"
           />
@@ -222,6 +266,17 @@ export default defineComponent({
   z-index: 1;
 }
 
+.staff-header--off {
+  color: #b23b3b;
+  background: #fdeaea;
+}
+
+.staff-header-off-badge {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .time-label {
   grid-column: 1;
   padding: 0 8px;
@@ -247,5 +302,11 @@ export default defineComponent({
 
 .slot-cell--hour {
   border-top: 1px solid var(--color-border-hover);
+}
+
+.slot-cell--off {
+  background: #f3f3f3;
+  cursor: default;
+  pointer-events: none;
 }
 </style>

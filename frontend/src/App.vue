@@ -62,18 +62,18 @@ export default defineComponent({
 
 <template>
   <div class="app-layout">
-    <ReservationToolbar
-      v-if="$route.name === 'reservations'"
-      :date-label="dateLabel"
-      :selected-date="selectedDate"
-      @prev-date="shiftDate(-1)"
-      @next-date="shiftDate(1)"
-      @select-date="setSelectedDate"
-      @open-create="openCreateDialog()"
-      @open-edit="openEditDialog"
-    />
-    <div class="app-body">
-      <AppSidebar />
+    <AppSidebar />
+    <div class="app-main">
+      <ReservationToolbar
+        v-if="$route.name === 'reservations'"
+        :date-label="dateLabel"
+        :selected-date="selectedDate"
+        @prev-date="shiftDate(-1)"
+        @next-date="shiftDate(1)"
+        @select-date="setSelectedDate"
+        @open-create="openCreateDialog()"
+        @open-edit="openEditDialog"
+      />
       <RouterView v-slot="{ Component }">
         <component
           :is="Component"
@@ -99,13 +99,14 @@ export default defineComponent({
 <style scoped>
 .app-layout {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100%;
 }
 
-.app-body {
+.app-main {
   display: flex;
+  flex-direction: column;
   flex: 1;
-  min-height: 0;
+  min-width: 0;
 }
 </style>

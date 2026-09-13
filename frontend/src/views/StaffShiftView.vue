@@ -386,8 +386,6 @@ export default defineComponent({
 .shift-grid thead th.col-staff {
   left: 0;
   z-index: 2;
-  text-align: left;
-  padding-left: 14px;
 }
 
 .youbi {
@@ -409,7 +407,7 @@ export default defineComponent({
 .staff-cell-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -419,6 +417,10 @@ export default defineComponent({
 }
 
 .staff-delete {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 24px;
   height: 24px;
   border: 1px solid var(--color-border);
