@@ -3,7 +3,7 @@ import { defineComponent } from 'vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import ReservationToolbar from '@/components/layout/ReservationToolbar.vue'
 import ReservationCreateDialog from '@/components/reservation/ReservationCreateDialog.vue'
-import type { ReservationCreatePrefill } from '@/types/reservation'
+import type { ReservationCreatePrefill, Reservation } from '@/types/reservation'
 
 export default defineComponent({
   name: 'App',
@@ -18,6 +18,7 @@ export default defineComponent({
       isCreateDialogOpen: false,
       reservationsVersion: 0,
       createDialogPrefill: null as ReservationCreatePrefill | null,
+      editingReservation: null as Reservation | null,
     }
   },
   computed: {
@@ -38,13 +39,20 @@ export default defineComponent({
     },
     openCreateDialog(prefill: ReservationCreatePrefill | null = null) {
       this.createDialogPrefill = prefill
+      this.editingReservation = null
+      this.isCreateDialogOpen = true
+    },
+    openEditDialog(reservation: Reservation) {
+      this.editingReservation = reservation
+      this.createDialogPrefill = null
       this.isCreateDialogOpen = true
     },
     closeCreateDialog() {
       this.isCreateDialogOpen = false
       this.createDialogPrefill = null
+      this.editingReservation = null
     },
-    onReservationCreated() {
+    onReservationSaved() {
       this.reservationsVersion += 1
       this.closeCreateDialog()
     },
@@ -55,12 +63,14 @@ export default defineComponent({
 <template>
   <div class="app-layout">
     <ReservationToolbar
+      v-if="$route.name === 'reservations'"
       :date-label="dateLabel"
       :selected-date="selectedDate"
       @prev-date="shiftDate(-1)"
       @next-date="shiftDate(1)"
       @select-date="setSelectedDate"
       @open-create="openCreateDialog()"
+      @open-edit="openEditDialog"
     />
     <div class="app-body">
       <AppSidebar />
@@ -70,6 +80,7 @@ export default defineComponent({
           :selected-date="selectedDate"
           :reservations-version="reservationsVersion"
           @open-create="openCreateDialog"
+          @open-edit="openEditDialog"
         />
       </RouterView>
     </div>
@@ -78,8 +89,9 @@ export default defineComponent({
       v-if="isCreateDialogOpen"
       :selected-date="selectedDate"
       :prefill="createDialogPrefill"
+      :editing-reservation="editingReservation"
       @close="closeCreateDialog"
-      @created="onReservationCreated"
+      @saved="onReservationSaved"
     />
   </div>
 </template>

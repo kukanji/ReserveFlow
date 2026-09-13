@@ -10,7 +10,7 @@ export default defineComponent({
   <aside class="sidebar">
     <nav class="sidebar-nav">
       <RouterLink to="/" class="sidebar-link">予約一覧</RouterLink>
-      <span class="sidebar-link">スタッフ</span>
+      <RouterLink to="/staff" class="sidebar-link">スタッフ</RouterLink>
     </nav>
     <nav class="sidebar-nav">
       <span class="sidebar-link">ログアウト</span>

@@ -19,6 +19,24 @@ export async function apiPost(path: string, body: unknown): Promise<void> {
   }
 }
 
+export async function apiPut(path: string, body: unknown): Promise<void> {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    throw new Error(`PUT ${path} failed: ${response.status}`)
+  }
+}
+
+export async function apiDelete(path: string): Promise<void> {
+  const response = await fetch(`${BASE_URL}${path}`, { method: 'DELETE' })
+  if (!response.ok) {
+    throw new Error(`DELETE ${path} failed: ${response.status}`)
+  }
+}
+
 export async function apiPostJson<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
